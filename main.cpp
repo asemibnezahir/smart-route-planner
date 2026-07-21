@@ -10,6 +10,8 @@
 #include <cstdlib>
 #include <limits>
 #include <windows.h>
+#include <fstream>
+#include <sstream>
 
 using namespace std;
 
@@ -41,7 +43,7 @@ class RoutePlanner
 
         string toLowerCase(string text)
         {
-            for (int i=0;i<text.size();i++)
+            for(size_t i=0;i<text.size();i++)
             {
                 text[i]=tolower(text[i]);
             }
@@ -50,7 +52,7 @@ class RoutePlanner
         int cityExists(string city)
         {
             string lowCity=toLowerCase(city);
-            for(int i=0;i<cities.size();i++)
+            for(size_t i=0;i<cities.size();i++)
             {
                 if(toLowerCase(cities[i])==lowCity)
                     return i;
@@ -59,7 +61,7 @@ class RoutePlanner
         }
         int roadExists(int sourceIndex,int destinationIndex)
         {
-            for(int i=0;i<graph[sourceIndex].size();i++)
+            for(size_t i=0;i<graph[sourceIndex].size();i++)
             {
                 if(graph[sourceIndex][i].first==destinationIndex)
                     return i;
@@ -70,7 +72,7 @@ class RoutePlanner
         {
             visited[cityIndex]=true;
             cout<<cities[cityIndex]<<" ->";
-            for(int i=0;i<graph[cityIndex].size();i++)
+            for(size_t i=0;i<graph[cityIndex].size();i++)
             {
                 int neibourCityIndex=graph[cityIndex][i].first;
                 if(visited[neibourCityIndex]==false)
@@ -85,7 +87,7 @@ class RoutePlanner
             {
                 routeCount++;
                 cout<<"Route-"<<routeCount<<": ";
-                for(int i=0;i<currentPath.size();i++)
+                for(size_t i=0;i<currentPath.size();i++)
                 {
                     cout<<cities[currentPath[i]];
                     if(i!=currentPath.size()-1)
@@ -97,7 +99,7 @@ class RoutePlanner
                 visited[currentIndex]=false;
                 return;
             }
-            for(int i=0;i<graph[currentIndex].size();i++)
+            for(size_t i=0;i<graph[currentIndex].size();i++)
             {
                 int neighbour=graph[currentIndex][i].first;
                 if(!visited[neighbour])
@@ -106,26 +108,149 @@ class RoutePlanner
             currentPath.pop_back();
             visited[currentIndex]=false;
         }
+        bool insertCity(string city)
+        {
+            if(cityExists(city)!=-1)
+                return false;
+            cities.push_back(city);
+            graph.push_back(vector<pair<int,int>>());
+            return true;
+        }
+        bool insertRoad(string source,string destination,int distance)
+        {
+            int sourceIndex=cityExists(source);
+            int destinationIndex=cityExists(destination);
+            if(sourceIndex==-1||destinationIndex==-1)
+                return false;
+            if(sourceIndex==destinationIndex)
+                return false;
+            if(roadExists(sourceIndex,destinationIndex)!=-1)
+                return false;
+            graph[sourceIndex].push_back({destinationIndex, distance});
+            graph[destinationIndex].push_back({sourceIndex, distance});
+            return true;
+        }
+        void loadCities()
+        {
+            ifstream file("../cities.csv");
+            if(!file.is_open())
+            {
+                setColor(12);
+                cout<<"City Name File Not Found"<<endl;
+                setColor(7);
+                system("pause");
+                return;
+            }
+            string city;
+            getline(file,city);
+            while(getline(file,city))
+            {
+                if(city.empty())
+                    continue;
+                insertCity(city);
+            }
+            file.close();
+            setColor(10);
+            cout<<"Loaded "<<cities.size()<<" Cities Successfully.\n";
+            setColor(7);
+        }
+        void loadRoutes()
+        {
+            ifstream file("../routes.csv");
+            if(!file.is_open())
+            {
+                setColor(12);
+                cout<<"Routes File Not Found"<<endl;
+                setColor(7);
+                return;
+            }
+            string line;
+            getline(file,line);
+            while(getline(file,line))
+            {
+                if(line.empty())
+                    continue;
+                stringstream ss(line);
+                string source,destination,distanceText;
+                getline(ss,source,',');
+                getline(ss,destination,',');
+                getline(ss,distanceText,',');
+                int distance=stoi(distanceText);
+                insertRoad(source,destination,distance);
+            }
+            file.close();
+            setColor(10);
+            cout<<"Loaded All Routes Successfully!" << endl;
+            setColor(7);
+        }
+        void saveCities()
+        {
+            ofstream file("../cities.csv");
+            if(!file.is_open())
+            {
+                setColor(12);
+                cout<<"City Names File Save Failed!"<<endl;
+                setColor(7);
+                return;
+            }
+            file<<"City\n";
+            for(size_t i=0;i<cities.size();i++)
+                file<<cities[i]<<"\n";
+            file.close();
+        }
+        void saveRoutes()
+        {
+            ofstream file("../routes.csv");
+            if(!file.is_open())
+            {
+                setColor(12);
+                cout<<"Routes File Save Failed!"<<endl;
+                setColor(7);
+                return;
+            }
+            file<<"Source,Destination,Distance\n";
+            for(size_t i=0;i<graph.size();i++)
+            {
+                for(size_t j=0;j<graph[i].size();j++)
+                {
+                    int desInd=graph[i][j].first;
+                    int dis=graph[i][j].second;
+                    if(i<desInd)
+                        file<<cities[i]<<","<<cities[desInd]<<","<<dis<<"\n";
+                }
+            }
+            file.close();
+        }
 
     public:
+        void initialize()
+        {
+            loadCities();
+            loadRoutes();
+            system("pause");
+        }
+        void save()
+        {
+            saveCities();
+            saveRoutes();
+        }
         void addCity()
         {
             setColor(14);
             string city;
             cout<<"Enter city name: ";
             getline(cin>>ws,city);
-            if(cityExists(city)!=-1)
+            if(!insertCity(city))
             {
                 setColor(12);
                 cout<<"City already exists!! Add another....."<<endl;
                 setColor(7);
                 return;
             }
-            cities.push_back(city);
-            graph.push_back(vector<pair<int,int>>());
             setColor(10);
             cout<<city<<" added successfully!"<<endl;
             setColor(7);
+            saveCities();
         }
         void showCities()
         {
@@ -139,7 +264,7 @@ class RoutePlanner
             setColor(11);
             cout<<"\n----- Available Cities -----"<<endl;
             setColor(7);
-            for(int i=0;i<cities.size();i++)
+            for(size_t i=0;i<cities.size();i++)
                 cout<<"  "<<i+1<<". "<<cities[i]<<endl;
         }
         void removeCity()
@@ -158,9 +283,9 @@ class RoutePlanner
             }
             cities.erase(cities.begin()+Ind);
             graph.erase(graph.begin()+Ind);
-            for(int i=0;i<graph.size();i++)
+            for(size_t i=0;i<graph.size();i++)
             {
-                for(int j=0;j<graph[i].size();j++)
+                for(size_t j=0;j<graph[i].size();j++)
                 {
                     if(graph[i][j].first==Ind)
                     {
@@ -175,6 +300,7 @@ class RoutePlanner
             setColor(10);
             cout<<city<<" removed successfully!"<< endl;
             setColor(7);
+            save();
         }
         void addRoad()
         {
@@ -221,39 +347,55 @@ class RoutePlanner
                 setColor(7);
                 return;
             }
-            if(roadExists(sourceIndex,destinationIndex)!=-1)
+            if(!insertRoad(source,destination,distance))
             {
                 cout<<"Road Already Exists. Not need to add again...."<<endl;
                 setColor(7);
                 return;
             }
-            graph[sourceIndex].push_back({destinationIndex,distance});
-            graph[destinationIndex].push_back({sourceIndex,distance});
             setColor(10);
             cout<<"Road added successfully!"<<endl;
             setColor(7);
+            saveRoutes();
         }
         void showRoads()
         {
-            if(cities.empty())
+            bool hasRoad=false;
+            for(size_t i=0;i<graph.size();i++)
+            {
+                if(!graph[i].empty())
+                {
+                    hasRoad=true;
+                    break;
+                }
+            }
+            if(!hasRoad)
             {
                 setColor(12);
-                cout<<"No Roads Available!! Add some cities first..."<<endl;
+                cout<<"No Roads Available!! Add some roads first..."<< endl;
                 setColor(7);
                 return;
             }
             setColor(14);
-            for(int i=0;i<graph.size();i++)
+            for(size_t i=0;i<graph.size();i++)
             {
-                setColor(11);
-                cout<<cities[i]<<":"<<endl;
-                setColor(7);
+                bool printed=false;
                 routeCount=0;
-                for(int j=0;j<graph[i].size();j++)
+                for(size_t j=0;j<graph[i].size();j++)
                 {
-                    routeCount++;
                     if(graph[i][j].first>i)
-                        cout<<routeCount<<". "<<cities[i]<<" <-->"<<cities[graph[i][j].first]<<" ("<<graph[i][j].second<<" km)"<<endl;
+                    {
+                        if(!printed)
+                        {
+                            setColor(11);
+                            cout<<cities[i]<<":"<<endl;
+                            setColor(7);
+                            routeCount=0;
+                            printed=true;
+                        }
+                        routeCount++;
+                        cout<<setw(5)<<routeCount<<". "<<cities[i]<<" <--> "<<cities[graph[i][j].first]<<" ("<<graph[i][j].second<<" km)"<<endl;
+                    }
                 }
             }
             setColor(7);
@@ -307,6 +449,7 @@ class RoutePlanner
             setColor(10);
             cout<<"Road removed successfully!"<<endl;
             setColor(7);
+            saveRoutes();
         }
         void exploreCities()
         {
@@ -422,7 +565,7 @@ class RoutePlanner
                 pq.pop();
                 if(currentDistance>distance[currentCityIndex])
                     continue;
-                for(int i=0;i<graph[currentCityIndex].size();i++)
+                for(size_t i=0;i<graph[currentCityIndex].size();i++)
                 {
                     int neighbor=graph[currentCityIndex][i].first;
                     int roadDistance=graph[currentCityIndex][i].second;
@@ -450,7 +593,7 @@ class RoutePlanner
                 current=parent[current];
             }
             reverse(path.begin(),path.end());
-            for(int i=0;i<path.size();i++)
+            for(size_t i=0;i<path.size();i++)
             {
                 cout<<cities[path[i]];
                 if(i!=path.size()-1)
@@ -488,6 +631,7 @@ RoutePlanner planner;
 
 int main()
 {
+    planner.initialize();
     int choice;
     while(true)
     {
@@ -577,6 +721,7 @@ int main()
                 break;
 
             case 11:
+                planner.save();
                 clearScreen();
                 setColor(11);
                 cout<<"\n=========================================\n";
