@@ -31,6 +31,27 @@ class RoutePlanner
             }
             return -1;
         }
+        int roadExists(int sourceIndex,int destinationIndex)
+        {
+            for(int i=0;i<graph[sourceIndex].size();i++)
+            {
+                if(graph[sourceIndex][i].first==destinationIndex)
+                    return i;
+            }
+            return -1;
+        }
+        void DFSHelper(int cityIndex,vector<bool>&visited)
+        {
+            visited[cityIndex]=true;
+            cout<<cities[cityIndex]<<" ->";
+            for(int i=0;i<graph[cityIndex].size();i++)
+            {
+                int neibourCityIndex=graph[cityIndex][i].first;
+                if(visited[neibourCityIndex]==false)
+                    DFSHelper(neibourCityIndex,visited);
+            }
+        }
+
     public:
         void addCity()
         {
@@ -62,7 +83,8 @@ class RoutePlanner
         }
         void removeCity()
         {
-            string city;
+            cout<<"Feature coming soon..."<<endl;
+            /*string city;
             cout<<"Enter city name: ";
             getline(cin>>ws,city);
             int Ind=cityExists(city);
@@ -74,6 +96,7 @@ class RoutePlanner
             cities.erase(cities.begin()+Ind);
             cityIndex.erase(toLowerCase(city));
             cout<<city<<" removed successfully!"<< endl;
+            */
         }
         void addRoad()
         {
@@ -112,8 +135,84 @@ class RoutePlanner
                 cout<<"Source and Destination cannot be the same!!"<<endl;
                 return;
             }
+            if(roadExists(sourceIndex,destinationIndex)!=-1)
+            {
+                cout<<"Road Already Exists. Not need to add again...."<<endl;
+                return;
+            }
             graph[sourceIndex].push_back({destinationIndex,distance});
             graph[destinationIndex].push_back({sourceIndex,distance});
+            cout<<"Road added successfully!"<< endl;
+        }
+        void showRoads()
+        {
+            for(int i=0;i<graph.size();i++)
+            {
+                cout<<cities[i]<<":"<<endl;
+                for(int j=0;j<graph[i].size();j++)
+                {
+                    if(graph[i][j].first>i)
+                        cout<<cities[i]<<" <--> "<<cities[graph[i][j].first]<<" ("<<graph[i][j].second<<" km)"<<endl;
+                }
+            }
+        }
+        void removeRoad()
+        {
+            string source,destination;
+            cout<<"Enter Source City: ";
+            getline(cin>>ws,source);
+            cout<<"Enter Destination City: ";
+            getline(cin>>ws,destination);
+            int sourceIndex=cityExists(source);
+            int destinationIndex=cityExists(destination);
+            if(sourceIndex==-1&&destinationIndex==-1)
+            {
+                cout<<"Both cities do not exist!!"<<endl;
+                return;
+            }
+            else if(sourceIndex==-1)
+            {
+                cout<<"Source City do not exist!!"<<endl;
+                return;
+            }
+            else if(destinationIndex==-1)
+            {
+                cout<<"Destination City do not exist!!"<<endl;
+                return;
+            }
+            if(sourceIndex==destinationIndex)
+            {
+                cout<<"Source and Destination cannot be the same!!"<<endl;
+                return;
+            }
+            int roadInd1=roadExists(sourceIndex,destinationIndex);
+            int roadInd2=roadExists(destinationIndex,sourceIndex);
+
+            if(roadInd1==-1||roadInd2==-1)
+            {
+                cout<<"Road Doesnot Exists."<<endl;
+                return;
+            }
+            graph[sourceIndex].erase(graph[sourceIndex].begin()+roadInd1);
+            graph[destinationIndex].erase(graph[destinationIndex].begin()+roadInd2);
+            cout<<"Road removed successfully!"<<endl;
+        }
+        void exploreCities()
+        {
+            string city;
+            cout<<"Enter Starting City: ";
+            getline(cin>>ws,city);
+            int startIndex=cityExists(city);
+            if(startIndex==-1)
+            {
+                cout<<"City does not exist!!"<<endl;
+                return;
+            }
+            vector<bool> visited(cities.size(),false);
+            cout<<"Exploring From :"<<city<<endl;
+            DFSHelper(startIndex,visited);
+            cout<<endl;
+
         }
 };
 
@@ -130,13 +229,16 @@ int main()
         cout<<"=========================================\n";
 
         cout<<"1. Add City\n";
-        cout<<"2. Add Route\n";
-        cout<<"3. Show Cities\n";
-        cout<<"4. Show Routes\n";
-        cout<<"5. Find All Routes (DFS)\n";
-        cout<<"6. Find Shortest Route (Dijkstra)\n";
-        cout<<"7. Compare Algorithms\n";
-        cout<<"8. Exit\n";
+        cout<<"2. Remove City\n";
+        cout<<"3. Add Route\n";
+        cout<<"4. Remove Route\n";
+        cout<<"5. Show Cities\n";
+        cout<<"6. Show Routes\n";
+        cout<<"7. Explore Cities\n";
+        cout<<"8. Find All Routes\n";
+        cout<<"9. Find Shortest Route\n";
+        cout<<"10. Developer Infomation\n";
+        cout<<"11. Exit\n";
 
         cout<<"\nEnter your choice: ";
         cin>>choice;
@@ -148,32 +250,44 @@ int main()
                 break;
 
             case 2:
-                planner.showCities();
-                break;
-
-            case 3:
                 planner.removeCity();
                 break;
 
+            case 3:
+                planner.addRoad();
+                break;
+
             case 4:
-                cout << "\n[Show Routes Selected]\n";
+                planner.removeRoad();
                 break;
 
             case 5:
-                cout << "\n[DFS Selected]\n";
+                planner.showCities();
                 break;
 
             case 6:
-                cout << "\n[Dijkstra Selected]\n";
+                planner.showRoads();
                 break;
 
             case 7:
-                cout << "\n[Comparison Mode Selected]\n";
+                planner.exploreCities();
                 break;
 
             case 8:
                 cout << "\nThank you for using Smart Route Planner!\n";
-                return 0;
+                break;
+
+            case 9:
+                cout << "\nThank you for using Smart Route Planner!\n";
+                break;
+
+            case 10:
+                cout << "\nThank you for using Smart Route Planner!\n";
+                break;
+
+            case 11:
+                cout << "\nThank you for using Smart Route Planner!\n";
+                break;
 
             default:
                 cout << "\nInvalid Choice! Please try again.\n";
