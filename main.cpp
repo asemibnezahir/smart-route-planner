@@ -1,22 +1,25 @@
-//Header Files
+// Header Files
 #include <iostream>
-#include<vector>
-#include<string>
-#include<unordered_map>
+#include <vector>
+#include <string>
+#include <unordered_map>
+#include <queue>
+#include <climits>
+#include <algorithm>
+#include <iomanip>
 
 using namespace std;
 
 class RoutePlanner
 {
     private:
-        vector<string> cities; //Member Variable
-        unordered_map<string,int>cityIndex;
-        vector<vector<pair<int,int>>>graph;
-        int routecount=0;
+        vector<string> cities; // Member Variable
+        vector<vector<pair<int,int>>> graph;
+        int routeCount=0;
 
         string toLowerCase(string text)
         {
-            for(int i=0;i<text.size();i++)
+            for (int i=0;i<text.size();i++)
             {
                 text[i]=tolower(text[i]);
             }
@@ -58,8 +61,8 @@ class RoutePlanner
             currentPath.push_back(currentIndex);
             if(currentIndex==destinationIndex)
             {
-                routecount++;
-                cout<<"Route-"<<routecount<<": ";
+                routeCount++;
+                cout<<"Route-"<<routeCount<<": ";
                 for(int i=0;i<currentPath.size();i++)
                 {
                     cout<<cities[currentPath[i]];
@@ -94,7 +97,6 @@ class RoutePlanner
                 return;
             }
             cities.push_back(city);
-            cityIndex[toLowerCase(city)]=cities.size()-1;
             graph.push_back(vector<pair<int,int>>());
             cout<<city<<" added successfully!"<<endl;
         }
@@ -107,14 +109,11 @@ class RoutePlanner
             }
             cout<<"\n----- Available Cities -----"<<endl;
             for(int i=0;i<cities.size();i++)
-            {
                 cout<<"  "<<i+1<<". "<<cities[i]<<endl;
-            }
         }
         void removeCity()
         {
-            cout<<"Feature coming soon..."<<endl;
-            /*string city;
+            string city;
             cout<<"Enter city name: ";
             getline(cin>>ws,city);
             int Ind=cityExists(city);
@@ -124,9 +123,22 @@ class RoutePlanner
                 return;
             }
             cities.erase(cities.begin()+Ind);
-            cityIndex.erase(toLowerCase(city));
+            graph.erase(graph.begin()+Ind);
+            for(int i=0;i<graph.size();i++)
+            {
+                for(int j=0;j<graph[i].size();j++)
+                {
+                    if(graph[i][j].first==Ind)
+                    {
+                        graph[i].erase(graph[i].begin()+j);
+                        j--;
+                        continue;
+                    }
+                    if(graph[i][j].first>Ind)
+                        graph[i][j].first--;
+                }
+            }
             cout<<city<<" removed successfully!"<< endl;
-            */
         }
         void addRoad()
         {
@@ -172,17 +184,22 @@ class RoutePlanner
             }
             graph[sourceIndex].push_back({destinationIndex,distance});
             graph[destinationIndex].push_back({sourceIndex,distance});
-            cout<<"Road added successfully!"<< endl;
+            cout<<"Road added successfully!"<<endl;
         }
         void showRoads()
         {
+            if(cities.empty())
+            {
+                cout<<"No Roads Available!! Add some cities first..."<<endl;
+                return;
+            }
             for(int i=0;i<graph.size();i++)
             {
                 cout<<cities[i]<<":"<<endl;
                 for(int j=0;j<graph[i].size();j++)
                 {
                     if(graph[i][j].first>i)
-                        cout<<cities[i]<<" <--> "<<cities[graph[i][j].first]<<" ("<<graph[i][j].second<<" km)"<<endl;
+                        cout<<cities[i]<<" <-->"<<cities[graph[i][j].first]<<" ("<<graph[i][j].second<<" km)"<<endl;
                 }
             }
         }
@@ -212,11 +229,11 @@ class RoutePlanner
             }
             if(sourceIndex==destinationIndex)
             {
-                cout<<"Source and Destination cannot be the same!!"<<endl;
+                cout<<"Source and Destination cannot be the same!!" << endl;
                 return;
             }
-            int roadInd1=roadExists(sourceIndex,destinationIndex);
-            int roadInd2=roadExists(destinationIndex,sourceIndex);
+            int roadInd1=roadExists(sourceIndex, destinationIndex);
+            int roadInd2=roadExists(destinationIndex, sourceIndex);
 
             if(roadInd1==-1||roadInd2==-1)
             {
@@ -242,7 +259,6 @@ class RoutePlanner
             cout<<"Exploring From :"<<city<<endl;
             DFSHelper(startIndex,visited);
             cout<<endl;
-
         }
         void routeFinder()
         {
@@ -268,23 +284,116 @@ class RoutePlanner
                 cout<<"Destination City do not exist!! Add it first...."<<endl;
                 return;
             }
-            if(sourceIndex==destinationIndex)
+            if (sourceIndex==destinationIndex)
             {
                 cout<<"Source and Destination cannot be the same!!"<<endl;
                 return;
             }
-            routecount=0;
-            vector<bool>visited(graph.size(),false);
-            vector<int>currentPath;
+            routeCount=0;
+            vector<bool> visited(graph.size(),false);
+            vector<int> currentPath;
             routeFinderHelper(sourceIndex,destinationIndex,visited,currentPath);
-            if(routecount==0)
-                cout<<"No route found between "<<source<<" and "<<destination<<"."<<endl;
+            if(routeCount==0)
+                cout<<"No route found between "<<source<<" and "<< destination<<"."<<endl;
         }
-
+        void shortestRoute()
+        {
+            string source,destination;
+            cout<<"Enter Source City: ";
+            getline(cin>>ws,source);
+            cout<<"Enter Destination City: ";
+            getline(cin>>ws,destination);
+            int sourceIndex=cityExists(source);
+            int destinationIndex=cityExists(destination);
+            if(sourceIndex==-1&&destinationIndex==-1)
+            {
+                cout<<"Both cities do not exist!! Add them first...."<<endl;
+                return;
+            }
+            else if(sourceIndex==-1)
+            {
+                cout<<"Source City do not exist!! Add it first...."<<endl;
+                return;
+            }
+            else if(destinationIndex==-1)
+            {
+                cout<<"Destination City do not exist!! Add it first...."<<endl;
+                return;
+            }
+            if(sourceIndex==destinationIndex)
+            {
+                cout<<"Source and Destination cannot be the same!!" << endl;
+                return;
+            }
+            vector<int> distance(cities.size(),INT_MAX);
+            vector<int> parent(cities.size(),-1);
+            priority_queue<pair<int,int>,vector<pair<int,int>>,greater<pair<int,int>>> pq;
+            distance[sourceIndex]=0;
+            pq.push({0,sourceIndex});
+            while(!pq.empty())
+            {
+                int currentDistance=pq.top().first;
+                int currentCityIndex=pq.top().second;
+                pq.pop();
+                if(currentDistance>distance[currentCityIndex])
+                    continue;
+                for(int i=0;i<graph[currentCityIndex].size();i++)
+                {
+                    int neighbor=graph[currentCityIndex][i].first;
+                    int roadDistance=graph[currentCityIndex][i].second;
+                    int newDistance=currentDistance + roadDistance;
+                    if(newDistance<distance[neighbor])
+                    {
+                        distance[neighbor]=newDistance;
+                        parent[neighbor]=currentCityIndex;
+                        pq.push({newDistance,neighbor});
+                    }
+                }
+            }
+            if(distance[destinationIndex]==INT_MAX)
+            {
+                cout<<"No Paths Found to "<<cities[destinationIndex]<<endl;
+                return;
+            }
+            vector<int> path;
+            int current=destinationIndex;
+            while(current!=-1)
+            {
+                path.push_back(current);
+                current=parent[current];
+            }
+            reverse(path.begin(),path.end());
+            for(int i=0;i<path.size();i++)
+            {
+                cout<<cities[path[i]];
+                if(i!=path.size()-1)
+                    cout<<" -> ";
+                else
+                    cout<<endl;
+            }
+            cout<<"Total Distance: "<<distance[destinationIndex]<<" Km"<<endl;
+        }
+        void teamInfo()
+        {
+            cout<<"\n==============================================\n";
+            cout<<"          TEAM INFORMATION\n";
+            cout<<"==============================================\n";
+            cout<<"Team Name    : RouteMasters\n";
+            cout<<"Project Name : Smart Route Planner\n";
+            cout<<"Total Members: 5\n";
+            cout<<"==============================================\n\n";
+            cout<<left<<setw(5)<<"SL"<<setw(30)<<"Name"<<setw(15)<<"Student ID"<<endl;
+            cout<<"------------------------------------------------------\n";
+            cout<<left<<setw(5)<<"1"<<setw(30)<<"Md Rahat Mahamud"<<setw(15)<<"252-15-234"<<endl;
+            cout<<left<<setw(5)<<"2"<<setw(30)<<"Asem Ibne Zahir"<<setw(15)<<"252-15-199"<<endl;
+            cout<<left<<setw(5)<<"3"<<setw(30)<<"MD Shahriar Alam Ohe"<<setw(15)<<"252-15-197"<<endl;
+            cout<<left<<setw(5)<<"4"<<setw(30)<<"Md Ashak Billah Tanzim"<<setw(15)<<"252-15-796"<<endl;
+            cout<<left<<setw(5)<<"5"<<setw(30)<<"Md Adip Hasan"<<setw(15)<<"252-15-082"<<endl;
+            cout<<"==============================================\n";
+        }
 };
 
 RoutePlanner planner;
-
 
 int main()
 {
@@ -345,17 +454,22 @@ int main()
                 break;
 
             case 9:
-                cout << "\nThank you for using Smart Route Planner!\n";
+                planner.shortestRoute();
                 break;
 
             case 10:
-                cout << "\nThank you for using Smart Route Planner!\n";
+                planner.teamInfo();
                 break;
 
-            case 11: exit(0);
+            case 11:
+                cout<<"\n=========================================\n";
+                cout<<" Thank you for using Smart Route Planner!\n";
+                cout<<"        Have a Safe Journey!\n";
+                cout<<"=========================================\n";
+                exit(0);
 
             default:
-                cout << "\nInvalid Choice! Please try again.\n";
+                cout<<"\nInvalid Choice! Please try again.\n";
         }
     }
 }
