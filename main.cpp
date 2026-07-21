@@ -12,6 +12,7 @@ class RoutePlanner
         vector<string> cities; //Member Variable
         unordered_map<string,int>cityIndex;
         vector<vector<pair<int,int>>>graph;
+        int routecount=0;
 
         string toLowerCase(string text)
         {
@@ -50,6 +51,35 @@ class RoutePlanner
                 if(visited[neibourCityIndex]==false)
                     DFSHelper(neibourCityIndex,visited);
             }
+        }
+        void routeFinderHelper(int currentIndex,int destinationIndex,vector<bool>&visited,vector<int>&currentPath)
+        {
+            visited[currentIndex]=true;
+            currentPath.push_back(currentIndex);
+            if(currentIndex==destinationIndex)
+            {
+                routecount++;
+                cout<<"Route-"<<routecount<<": ";
+                for(int i=0;i<currentPath.size();i++)
+                {
+                    cout<<cities[currentPath[i]];
+                    if(i!=currentPath.size()-1)
+                        cout<<" -> ";
+                    else
+                        cout<<endl;
+                }
+                currentPath.pop_back();
+                visited[currentIndex]=false;
+                return;
+            }
+            for(int i=0;i<graph[currentIndex].size();i++)
+            {
+                int neighbour=graph[currentIndex][i].first;
+                if(!visited[neighbour])
+                    routeFinderHelper(neighbour,destinationIndex,visited,currentPath);
+            }
+            currentPath.pop_back();
+            visited[currentIndex]=false;
         }
 
     public:
@@ -214,6 +244,43 @@ class RoutePlanner
             cout<<endl;
 
         }
+        void routeFinder()
+        {
+            string source,destination;
+            cout<<"Enter Source City: ";
+            getline(cin>>ws,source);
+            cout<<"Enter Destination City: ";
+            getline(cin>>ws,destination);
+            int sourceIndex=cityExists(source);
+            int destinationIndex=cityExists(destination);
+            if(sourceIndex==-1&&destinationIndex==-1)
+            {
+                cout<<"Both cities do not exist!! Add them first...."<<endl;
+                return;
+            }
+            else if(sourceIndex==-1)
+            {
+                cout<<"Source City do not exist!! Add it first...."<<endl;
+                return;
+            }
+            else if(destinationIndex==-1)
+            {
+                cout<<"Destination City do not exist!! Add it first...."<<endl;
+                return;
+            }
+            if(sourceIndex==destinationIndex)
+            {
+                cout<<"Source and Destination cannot be the same!!"<<endl;
+                return;
+            }
+            routecount=0;
+            vector<bool>visited(graph.size(),false);
+            vector<int>currentPath;
+            routeFinderHelper(sourceIndex,destinationIndex,visited,currentPath);
+            if(routecount==0)
+                cout<<"No route found between "<<source<<" and "<<destination<<"."<<endl;
+        }
+
 };
 
 RoutePlanner planner;
@@ -237,7 +304,7 @@ int main()
         cout<<"7. Explore Cities\n";
         cout<<"8. Find All Routes\n";
         cout<<"9. Find Shortest Route\n";
-        cout<<"10. Developer Infomation\n";
+        cout<<"10. Developer Information\n";
         cout<<"11. Exit\n";
 
         cout<<"\nEnter your choice: ";
@@ -274,7 +341,7 @@ int main()
                 break;
 
             case 8:
-                cout << "\nThank you for using Smart Route Planner!\n";
+                planner.routeFinder();
                 break;
 
             case 9:
@@ -285,9 +352,7 @@ int main()
                 cout << "\nThank you for using Smart Route Planner!\n";
                 break;
 
-            case 11:
-                cout << "\nThank you for using Smart Route Planner!\n";
-                break;
+            case 11: exit(0);
 
             default:
                 cout << "\nInvalid Choice! Please try again.\n";
