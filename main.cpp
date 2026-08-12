@@ -71,7 +71,7 @@ class RoutePlanner
         void DFSHelper(int cityIndex,vector<bool>&visited)
         {
             visited[cityIndex]=true;
-            cout<<cities[cityIndex]<<" ->";
+            cout<<cities[cityIndex]<<" -> ";
             for(size_t i=0;i<graph[cityIndex].size();i++)
             {
                 int neibourCityIndex=graph[cityIndex][i].first;
@@ -81,6 +81,8 @@ class RoutePlanner
         }
         void routeFinderHelper(int currentIndex,int destinationIndex,vector<bool>&visited,vector<int>&currentPath)
         {
+            if(routeCount>=200) return;
+
             visited[currentIndex]=true;
             currentPath.push_back(currentIndex);
             if(currentIndex==destinationIndex)
@@ -93,7 +95,7 @@ class RoutePlanner
                     if(i!=currentPath.size()-1)
                         cout<<" -> ";
                     else
-                        cout<<endl;
+                        cout<<endl<<endl;
                 }
                 currentPath.pop_back();
                 visited[currentIndex]=false;
